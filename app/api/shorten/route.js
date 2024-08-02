@@ -1,33 +1,64 @@
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "../../../lib/supabaseClient";
 import { nanoid } from "nanoid";
 
-export const POST = async (req) => {
-  const { longUrl } = await req.json();
+// POST method to handle URL shortening
+export async function POST(request) {
+  try {
+    const { longUrl, customId } = await request.json();
+    console.log(longUrl, customId);
 
-  if (!longUrl) {
-    return new Response(JSON.stringify({ error: "URL is required" }), {
-      status: 400,
+    // Use customId if provided, otherwise generate a random one
+    const shortId = customId || nanoid(6);
+
+    // Check if the shortId already exists
+    const { data: existingUrl, error: existingError } = await supabase
+      .from("urls")
+      .select("short_url")
+      .eq("short_url", shortId)
+      .single();
+
+    // if (existingError) {
+    //   return new Response(
+    //     JSON.stringify({ error: "Database error. Please try again." }),
+    //     {
+    //       status: 500,
+    //     }
+    //   );
+    // }
+
+    if (existingUrl) {
+      return new Response(
+        JSON.stringify({ error: "ID already exists. Please try another one." }),
+        {
+          status: 400,
+        }
+      );
+    }
+
+    // Insert the new short URL into the database
+    const { data, error } = await supabase
+      .from("urls")
+      .insert([{ long_url: longUrl, short_url: shortId }])
+      .single();
+
+    if (error) {
+      return new Response(
+        JSON.stringify({ error: "Failed to shorten URL. Please try again." }),
+        {
+          status: 500,
+        }
+      );
+    }
+
+    return new Response(JSON.stringify({ shortUrl: shortId }), {
+      status: 200,
     });
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: "Invalid request. Please check your input." }),
+      {
+        status: 400,
+      }
+    );
   }
-
-  const shortUrl = nanoid(6);
-
-  console.log("Short URL: " + shortUrl);
-  console.log("Long URL: " + longUrl);
-
-  const { data, error } = await supabase
-    .from("urls")
-    .insert([{ long_url: longUrl, short_url: shortUrl }])
-    .single();
-
-  if (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-    });
-  }
-
-  console.log("URL inserted successfully: " + JSON.stringify(data));
-  return new Response(JSON.stringify({ shortUrl }), {
-    status: 200,
-  });
-};
+}

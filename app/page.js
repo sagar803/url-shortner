@@ -23,27 +23,40 @@ import {
 
 export default function Home() {
   const [longUrl, setLongUrl] = useState("");
+  const [customId, setCustomId] = useState("");
   const [shortUrl, setShortUrl] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const generateRandomId = () => {
+    const randomId = Math.random().toString(36).substring(2, 8);
+    setCustomId(randomId);
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(shortUrl).then(() => {
+      alert("Copied to clipboard!");
+    });
+  };
 
   const handleSubmit = async (e) => {
-    setLoading(true);
     e.preventDefault();
-    try {
-      const res = await fetch("/api/shorten", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ longUrl }),
-      });
-      const data = await res.json();
-      setShortUrl(`${window.location.origin}/${data.shortUrl}`);
-    } catch (error) {
-      console.log("error :", error.message);
-    } finally {
-      setLoading(false);
+    const res = await fetch("/api/shorten", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ longUrl, customId }),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      setError(errorData.error);
+      return;
     }
+
+    const data = await res.json();
+    setShortUrl(`${window.location.origin}/${data.shortUrl}`);
+    setError("");
   };
 
   return (
@@ -62,21 +75,38 @@ export default function Home() {
               placeholder="Enter your URL"
               required
             />
+            <div className="flex space-x-2">
+              <Input
+                type="text"
+                value={customId}
+                onChange={(e) => setCustomId(e.target.value)}
+                placeholder="Custom ID (optional)"
+              />
+              <Button type="button" onClick={generateRandomId}>
+                Generate Random ID
+              </Button>
+            </div>
+            {error && <p className="text-red-500">{error}</p>}
             <Button type="submit" className="w-full">
-              {loading ? "Shortening..." : "Shorten"}
+              Shorten
             </Button>
           </form>
           {shortUrl && (
             <div className="mt-4 p-2 border border-gray-300 rounded">
               <p className="text-gray-700">Short URL:</p>
-              <a
-                href={shortUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-500 underline"
-              >
-                {shortUrl}
-              </a>
+              <div className="flex justify-between items-center">
+                <a
+                  href={shortUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 underline"
+                >
+                  {shortUrl}
+                </a>
+                <Button type="button" onClick={copyToClipboard}>
+                  Copy
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
