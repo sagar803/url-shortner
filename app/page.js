@@ -73,7 +73,7 @@ export default function Home() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen">
+    <div className="flex justify-center items-center min-h-screen p-4">
       <MatrixBackground />
       <Card className="max-w-md w-full bg-white backdrop-blur-sm">
         <CardHeader>
@@ -89,25 +89,34 @@ export default function Home() {
         </div>
           <CardDescription className="text-gray-700">Enter a long URL to shorten it</CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              type="url"
-              value={longUrl}
-              onChange={(e) => setLongUrl(e.target.value)}
-              placeholder="Enter your URL"
-              required
-              className="bg-white/70"
-            />
-            <div className="flex space-x-2 items-center">
-              <span className="text-gray-600">link.bionicdiamond.com/</span>
+        <CardContent className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label htmlFor="longUrl" className="text-sm font-medium text-gray-700">Long URL</label>
               <Input
-                type="text"
-                value={customId}
-                onChange={(e) => setCustomId(e.target.value)}
-                placeholder="custom text"
-                className="flex-grow bg-white/70"
+                id="longUrl"
+                type="url"
+                value={longUrl}
+                onChange={(e) => setLongUrl(e.target.value)}
+                placeholder="Enter your URL"
+                required
+                className="bg-white/70"
               />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="customId" className="text-sm font-medium text-gray-700">Custom Identifier</label>
+              <div className="flex space-x-2 items-center">
+                <span className="text-gray-600">link.bionicdiamond.com/</span>
+                <Input
+                  id="customId"
+                  type="text"
+                  value={customId}
+                  onChange={(e) => setCustomId(e.target.value)}
+                  placeholder="custom text"
+                  className="flex-grow bg-white/70"
+                />
+              </div>
             </div>
             {error && <p className="text-red-500">{error}</p>}
             <Button type="submit" className="w-full">
