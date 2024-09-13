@@ -1,9 +1,15 @@
-'use client'
+"use client";
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Clipboard, Check } from "lucide-react";
 
 const MatrixBackground = () => {
@@ -43,33 +49,43 @@ export default function Home() {
   const [shortUrl, setShortUrl] = useState("");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // New loading state
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(shortUrl).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);  // Reset after 2 seconds
+      setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await fetch("/api/shorten", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ longUrl, customId }),
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      setError("URL taken, please retry.");
-      return;
-    }
-
-    const data = await res.json();
-    setShortUrl(`${window.location.origin}/${data.shortUrl}`);
+    setIsLoading(true); // Set loading to true
     setError("");
+
+    try {
+      const res = await fetch("/api/shorten", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ longUrl, customId }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        setError("URL taken, please retry.");
+        return;
+      }
+
+      const data = await res.json();
+      setShortUrl(`${window.location.origin}/${data.shortUrl}`);
+      setError("");
+    } catch (err) {
+      setError("An error occurred. Please try again.");
+    } finally {
+      setIsLoading(false); // Set loading to false after completion
+    }
   };
 
   return (
@@ -78,21 +94,26 @@ export default function Home() {
       <Card className="max-w-md w-full bg-white backdrop-blur-sm">
         <CardHeader>
           <div className="flex items-center space-x-4">
-          <img
-            src="./dlogo.png"
-            alt="Logo Creator"
-            className="w-16 h-16 object-contain"
-          />
-          <CardTitle className="text-2xl font-bold">
-            URL Shortener
-          </CardTitle>
-        </div>
-          <CardDescription className="text-gray-700">Enter a long URL to shorten it</CardDescription>
+            <img
+              src="./dlogo.png"
+              alt="Logo Creator"
+              className="w-16 h-16 object-contain"
+            />
+            <CardTitle className="text-2xl font-bold">URL Shortener</CardTitle>
+          </div>
+          <CardDescription className="text-gray-700">
+            Enter a long URL to shorten it
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <label htmlFor="longUrl" className="text-sm font-medium text-gray-700">Long URL</label>
+              <label
+                htmlFor="longUrl"
+                className="text-sm font-medium text-gray-700"
+              >
+                Long URL
+              </label>
               <Input
                 id="longUrl"
                 type="url"
@@ -105,7 +126,12 @@ export default function Home() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="customId" className="text-sm font-medium text-gray-700">Custom Identifier</label>
+              <label
+                htmlFor="customId"
+                className="text-sm font-medium text-gray-700"
+              >
+                Custom Identifier
+              </label>
               <div className="flex space-x-2 items-center">
                 <span className="text-gray-600">link.bionicdiamond.com/</span>
                 <Input
@@ -119,8 +145,31 @@ export default function Home() {
               </div>
             </div>
             {error && <p className="text-red-500">{error}</p>}
-            <Button type="submit" className="w-full">
-              Shorten
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? (
+                <svg
+                  className="animate-spin h-5 w-5 mr-3 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8z"
+                  ></path>
+                </svg>
+              ) : (
+                "Shorten"
+              )}
             </Button>
           </form>
           {shortUrl && (
@@ -140,7 +189,11 @@ export default function Home() {
                 size="icon"
                 className="text-green-600"
               >
-                {copied ? <Check className="h-4 w-4" /> : <Clipboard className="h-4 w-4" />}
+                {copied ? (
+                  <Check className="h-4 w-4" />
+                ) : (
+                  <Clipboard className="h-4 w-4" />
+                )}
               </Button>
             </div>
           )}
